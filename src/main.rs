@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::WindowResolution};
 
 const WINDOW_WIDTH: f32 = 1024.0;
 const WINDOW_HEIGHT: f32 = 720.0;
@@ -26,7 +26,11 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     commands.spawn(SpriteBundle {
         sprite: Sprite {
             color: COLOR_PLATFORM,
@@ -67,4 +71,15 @@ fn setup(mut commands: Commands) {
     });
 
     commands.spawn(Camera2dBundle::default());
+
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(shape::Circle::default().into()).into(),
+        material: materials.add(ColorMaterial::from(COLOR_PLAYER)),
+        transform: Transform {
+            translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 30.0, 0.0),
+            scale: Vec3::new(30.0, 30.0, 1.0),
+            ..Default::default()
+        },
+        ..default()
+    });
 }
