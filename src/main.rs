@@ -17,7 +17,7 @@ fn main() {
             primary_window: Some(Window {
                 title: "Bevy Platformer".to_string(),
                 resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HEIGHT),
-                resizable: false,
+                resizable: true,
                 ..Default::default()
             }),
             ..Default::default()
@@ -37,8 +37,8 @@ fn setup(
             ..Default::default()
         },
         transform: Transform {
-            translation: Vec3::new(-100.0, WINDOW_BOTTOM_Y, 0.0),
-            scale: Vec3::new(75.0, 400.0, 1.0),
+            translation: Vec3::new(-100.0, WINDOW_BOTTOM_Y + (200.0 / 2.0), 0.0),
+            scale: Vec3::new(75.0, 200.0, 1.0),
             ..Default::default()
         },
         ..Default::default()
@@ -50,8 +50,8 @@ fn setup(
             ..Default::default()
         },
         transform: Transform {
-            translation: Vec3::new(100.0, WINDOW_BOTTOM_Y, 0.0),
-            scale: Vec3::new(50.0, 700.0, 1.0),
+            translation: Vec3::new(100.0, WINDOW_BOTTOM_Y + (350.0 / 2.0), 0.0),
+            scale: Vec3::new(50.0, 350.0, 1.0),
             ..Default::default()
         },
         ..Default::default()
@@ -63,8 +63,8 @@ fn setup(
             ..Default::default()
         },
         transform: Transform {
-            translation: Vec3::new(350.0, WINDOW_BOTTOM_Y, 0.0),
-            scale: Vec3::new(150.0, 500.0, 1.0),
+            translation: Vec3::new(350.0, WINDOW_BOTTOM_Y + (250.0 / 2.0), 0.0),
+            scale: Vec3::new(150.0, 250.0, 1.0),
             ..Default::default()
         },
         ..Default::default()
