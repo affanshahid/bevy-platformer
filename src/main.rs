@@ -1,4 +1,8 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::WindowResolution};
+use bevy_rapier2d::{
+    prelude::{NoUserData, RapierPhysicsPlugin},
+    render::RapierDebugRenderPlugin,
+};
 
 const WINDOW_WIDTH: f32 = 1024.0;
 const WINDOW_HEIGHT: f32 = 720.0;
@@ -22,6 +26,8 @@ fn main() {
             }),
             ..Default::default()
         }))
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(200.0))
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .run();
 }
