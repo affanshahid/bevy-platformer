@@ -1,4 +1,7 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::WindowResolution};
+use bevy::{
+    input::keyboard::KeyboardInput, prelude::*, sprite::MaterialMesh2dBundle,
+    window::WindowResolution,
+};
 use bevy_rapier2d::prelude::*;
 
 const WINDOW_WIDTH: f32 = 1024.0;
@@ -13,6 +16,8 @@ const COLOR_BACKGROUND: Color = Color::rgb(0.13, 0.13, 0.23);
 const COLOR_PLATFORM: Color = Color::rgb(0.29, 0.31, 0.41);
 const COLOR_PLAYER: Color = Color::rgb(0.60, 0.55, 0.60);
 const COLOR_FLOOR: Color = Color::rgb(0.45, 0.55, 0.66);
+
+const PLAYER_VELOCITY_X: f32 = 400.0;
 
 fn main() {
     App::new()
@@ -29,6 +34,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(200.0))
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
+        .add_system(movement)
         .run();
 }
 
@@ -71,16 +77,20 @@ fn setup(
 
     commands.spawn(Camera2dBundle::default());
 
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(shape::Circle::default().into()).into(),
-        material: materials.add(ColorMaterial::from(COLOR_PLAYER)),
-        transform: Transform {
-            translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 30.0, 0.0),
-            scale: Vec3::new(30.0, 30.0, 1.0),
-            ..Default::default()
-        },
-        ..default()
-    });
+    commands
+        .spawn(MaterialMesh2dBundle {
+            mesh: meshes.add(shape::Circle::default().into()).into(),
+            material: materials.add(ColorMaterial::from(COLOR_PLAYER)),
+            transform: Transform {
+                translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 30.0, 0.0),
+                scale: Vec3::new(30.0, 30.0, 1.0),
+                ..Default::default()
+            },
+            ..default()
+        })
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(Collider::ball(0.5))
+        .insert(KinematicCharacterController::default());
 
     commands
         .spawn(SpriteBundle {
@@ -97,4 +107,24 @@ fn setup(
         })
         .insert(RigidBody::Fixed)
         .insert(Collider::cuboid(0.5, 0.5));
+}
+
+fn movement(
+    input: Res<Input<KeyCode>>,
+    time: Res<Time>,
+    mut query: Query<&mut KinematicCharacterController>,
+) {
+    let mut player = query.single_mut();
+
+    let mut translation = Vec2::new(0.0, 0.0);
+
+    if input.pressed(KeyCode::Right) {
+        translation.x += time.delta_seconds() * PLAYER_VELOCITY_X;
+    }
+
+    if input.pressed(KeyCode::Left) {
+        translation.x += time.delta_seconds() * PLAYER_VELOCITY_X * -1.0;
+    }
+
+    player.translation = Some(translation);
 }
