@@ -10,6 +10,14 @@ const PLAYER_VELOCITY_Y: f32 = 850.0;
 
 const MAX_JUMP_HEIGHT: f32 = 230.0;
 
+const SPRITESHEET_COLS: usize = 7;
+const SPRITESHEET_ROWS: usize = 8;
+
+const SPRITE_WIDTH: f32 = 128.0;
+const SPRITE_HEIGHT: f32 = 256.0;
+
+const SPRITE_IDX_STAND: usize = 28;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -27,8 +35,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    commands.spawn(Camera2dBundle::default());
-
     commands
         .spawn(MaterialMesh2dBundle {
             mesh: meshes.add(shape::Circle::default().into()).into(),
