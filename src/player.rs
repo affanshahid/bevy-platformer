@@ -49,13 +49,16 @@ fn setup(
             sprite: TextureAtlasSprite::new(SPRITE_IDX_STAND),
             texture_atlas: atlas_handle,
             transform: Transform {
-                translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 30.0, 0.0),
+                translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 300.0, 0.0),
                 ..Default::default()
             },
             ..Default::default()
         })
         .insert(RigidBody::KinematicPositionBased)
-        .insert(Collider::ball(0.5))
+        .insert(Collider::cuboid(
+            SPRITE_TILE_WIDTH / 2.0,
+            SPRITE_TILE_HEIGHT / 2.0,
+        ))
         .insert(KinematicCharacterController::default());
 }
 
