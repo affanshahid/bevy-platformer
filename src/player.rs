@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{WINDOW_BOTTOM_Y, WINDOW_LEFT_X};
+use crate::{animation::Animation, WINDOW_BOTTOM_Y, WINDOW_LEFT_X};
 
 const PLAYER_VELOCITY_X: f32 = 400.0;
 const PLAYER_VELOCITY_Y: f32 = 850.0;
@@ -14,7 +16,14 @@ const SPRITESHEET_ROWS: usize = 8;
 const SPRITE_TILE_WIDTH: f32 = 128.0;
 const SPRITE_TILE_HEIGHT: f32 = 256.0;
 
+const SPRITE_RENDER_WIDTH: f32 = 64.0;
+const SPRITE_RENDER_HEIGHT: f32 = 128.0;
+
 const SPRITE_IDX_STAND: usize = 28;
+const SPRITE_IDX_WALKING: &[usize] = &[7, 0];
+const SPRITE_IDX_JUMP: usize = 35;
+
+const CYCLE_DELAY: Duration = Duration::from_millis(70);
 
 pub struct PlayerPlugin;
 
@@ -24,8 +33,20 @@ impl Plugin for PlayerPlugin {
             .add_system(movement)
             .add_system(jump)
             .add_system(rise)
-            .add_system(fall);
+            .add_system(fall)
+            .add_system(apply_movement_animation)
+            .add_system(apply_idle_sprite)
+            .add_system(apply_jump_sprite)
+            .add_system(update_direction)
+            .add_system(update_sprite_direction);
     }
+}
+
+#[derive(Component, Default)]
+enum Direction {
+    #[default]
+    Right,
+    Left,
 }
 
 fn setup(
@@ -50,6 +71,11 @@ fn setup(
             texture_atlas: atlas_handle,
             transform: Transform {
                 translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 300.0, 0.0),
+                scale: Vec3::new(
+                    SPRITE_RENDER_WIDTH / SPRITE_TILE_WIDTH,
+                    SPRITE_RENDER_HEIGHT / SPRITE_TILE_HEIGHT,
+                    1.0,
+                ),
                 ..Default::default()
             },
             ..Default::default()
@@ -59,7 +85,8 @@ fn setup(
             SPRITE_TILE_WIDTH / 2.0,
             SPRITE_TILE_HEIGHT / 2.0,
         ))
-        .insert(KinematicCharacterController::default());
+        .insert(KinematicCharacterController::default())
+        .insert(Direction::default());
 }
 
 fn movement(
@@ -144,5 +171,89 @@ fn fall(time: Res<Time>, mut query: Query<&mut KinematicCharacterController, Wit
     match player.translation {
         Some(vec) => player.translation = Some(Vec2::new(vec.x, movement)),
         None => player.translation = Some(Vec2::new(0.0, movement)),
+    }
+}
+
+fn apply_movement_animation(
+    mut commands: Commands,
+    query: Query<(Entity, &KinematicCharacterControllerOutput), Without<Animation>>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (player, output) = query.single();
+    if output.desired_translation.x != 0.0 && output.grounded {
+        commands
+            .entity(player)
+            .insert(Animation::new(SPRITE_IDX_WALKING, CYCLE_DELAY));
+    }
+}
+
+fn apply_idle_sprite(
+    mut commands: Commands,
+    mut query: Query<(
+        Entity,
+        &KinematicCharacterControllerOutput,
+        &mut TextureAtlasSprite,
+    )>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (player, output, mut sprite) = query.single_mut();
+    if output.desired_translation.x == 0.0 && output.grounded {
+        commands.entity(player).remove::<Animation>();
+        sprite.index = SPRITE_IDX_STAND
+    }
+}
+
+fn apply_jump_sprite(
+    mut commands: Commands,
+    mut query: Query<(
+        Entity,
+        &KinematicCharacterControllerOutput,
+        &mut TextureAtlasSprite,
+    )>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (player, output, mut sprite) = query.single_mut();
+    if !output.grounded {
+        commands.entity(player).remove::<Animation>();
+        sprite.index = SPRITE_IDX_JUMP
+    }
+}
+
+fn update_direction(
+    mut commands: Commands,
+    query: Query<(Entity, &KinematicCharacterControllerOutput)>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (player, output) = query.single();
+
+    if output.desired_translation.x > 0.0 {
+        commands.entity(player).insert(Direction::Right);
+    } else if output.desired_translation.x < 0.0 {
+        commands.entity(player).insert(Direction::Left);
+    }
+}
+
+fn update_sprite_direction(mut query: Query<(&mut TextureAtlasSprite, &Direction)>) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (mut sprite, direction) = query.single_mut();
+
+    match direction {
+        Direction::Right => sprite.flip_x = false,
+        Direction::Left => sprite.flip_x = true,
     }
 }

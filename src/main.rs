@@ -1,6 +1,8 @@
+mod animation;
 mod platforms;
 mod player;
 
+use animation::AnimationPlugin;
 use bevy::{prelude::*, window::WindowResolution};
 use bevy_rapier2d::prelude::*;
 use platforms::PlatformsPlugin;
@@ -33,6 +35,7 @@ fn main() {
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(PlatformsPlugin)
         .add_plugin(PlayerPlugin)
+        .add_plugin(AnimationPlugin)
         .add_startup_system(setup)
         .run();
 }
