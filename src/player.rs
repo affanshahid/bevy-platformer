@@ -42,9 +42,8 @@ impl Plugin for PlayerPlugin {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component)]
 enum Direction {
-    #[default]
     Right,
     Left,
 }
@@ -86,7 +85,7 @@ fn setup(
             SPRITE_TILE_HEIGHT / 2.0,
         ))
         .insert(KinematicCharacterController::default())
-        .insert(Direction::default());
+        .insert(Direction::Right);
 }
 
 fn movement(
