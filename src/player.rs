@@ -10,8 +10,8 @@ const PLAYER_VELOCITY_Y: f32 = 850.0;
 
 const MAX_JUMP_HEIGHT: f32 = 230.0;
 
-const SPRITESHEET_COLS: usize = 7;
-const SPRITESHEET_ROWS: usize = 8;
+const SPRITESHEET_COLS: u32 = 7;
+const SPRITESHEET_ROWS: u32 = 8;
 
 const SPRITE_TILE_WIDTH: f32 = 128.0;
 const SPRITE_TILE_HEIGHT: f32 = 256.0;
@@ -29,16 +29,16 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup)
-            .add_system(movement)
-            .add_system(jump)
-            .add_system(rise)
-            .add_system(fall)
-            .add_system(apply_movement_animation)
-            .add_system(apply_idle_sprite)
-            .add_system(apply_jump_sprite)
-            .add_system(update_direction)
-            .add_system(update_sprite_direction);
+        app.add_systems(Startup, setup)
+            .add_systems(Update, movement)
+            .add_systems(Update, jump)
+            .add_systems(Update, rise)
+            .add_systems(Update, fall)
+            .add_systems(Update, apply_movement_animation)
+            .add_systems(Update, apply_idle_sprite)
+            .add_systems(Update, apply_jump_sprite)
+            .add_systems(Update, update_direction)
+            .add_systems(Update, update_sprite_direction);
     }
 }
 
@@ -50,13 +50,12 @@ enum Direction {
 
 fn setup(
     mut commands: Commands,
-    mut atlases: ResMut<Assets<TextureAtlas>>,
+    mut atlases: ResMut<Assets<TextureAtlasLayout>>,
     server: Res<AssetServer>,
 ) {
     let image_handle: Handle<Image> = server.load("spritesheets/spritesheet_players.png");
-    let texture_atlas = TextureAtlas::from_grid(
-        image_handle,
-        Vec2::new(SPRITE_TILE_WIDTH, SPRITE_TILE_HEIGHT),
+    let texture_atlas = TextureAtlasLayout::from_grid(
+        UVec2::new(SPRITE_TILE_WIDTH as u32, SPRITE_TILE_HEIGHT as u32),
         SPRITESHEET_COLS,
         SPRITESHEET_ROWS,
         None,
@@ -65,20 +64,27 @@ fn setup(
     let atlas_handle = atlases.add(texture_atlas);
 
     commands
-        .spawn(SpriteSheetBundle {
-            sprite: TextureAtlasSprite::new(SPRITE_IDX_STAND),
-            texture_atlas: atlas_handle,
-            transform: Transform {
-                translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 300.0, 0.0),
-                scale: Vec3::new(
-                    SPRITE_RENDER_WIDTH / SPRITE_TILE_WIDTH,
-                    SPRITE_RENDER_HEIGHT / SPRITE_TILE_HEIGHT,
-                    1.0,
-                ),
-                ..Default::default()
+        .spawn((
+            SpriteBundle {
+                sprite: Sprite::default(),
+
+                texture: image_handle,
+                transform: Transform {
+                    translation: Vec3::new(WINDOW_LEFT_X + 100.0, WINDOW_BOTTOM_Y + 300.0, 0.0),
+                    scale: Vec3::new(
+                        SPRITE_RENDER_WIDTH / SPRITE_TILE_WIDTH,
+                        SPRITE_RENDER_HEIGHT / SPRITE_TILE_HEIGHT,
+                        1.0,
+                    ),
+                    ..default()
+                },
+                ..default()
             },
-            ..Default::default()
-        })
+            TextureAtlas {
+                layout: atlas_handle,
+                index: SPRITE_IDX_STAND,
+            },
+        ))
         .insert(RigidBody::KinematicPositionBased)
         .insert(Collider::cuboid(
             SPRITE_TILE_WIDTH / 2.0,
@@ -89,7 +95,7 @@ fn setup(
 }
 
 fn movement(
-    input: Res<Input<KeyCode>>,
+    input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     mut query: Query<&mut KinematicCharacterController>,
 ) {
@@ -97,11 +103,11 @@ fn movement(
 
     let mut movement = 0.0;
 
-    if input.pressed(KeyCode::Right) {
+    if input.pressed(KeyCode::ArrowRight) {
         movement += time.delta_seconds() * PLAYER_VELOCITY_X;
     }
 
-    if input.pressed(KeyCode::Left) {
+    if input.pressed(KeyCode::ArrowLeft) {
         movement += time.delta_seconds() * PLAYER_VELOCITY_X * -1.0;
     }
 
@@ -114,8 +120,9 @@ fn movement(
 #[derive(Component)]
 struct Jump(f32);
 
+#[allow(clippy::type_complexity)]
 fn jump(
-    input: Res<Input<KeyCode>>,
+    input: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
     query: Query<
         (Entity, &KinematicCharacterControllerOutput),
@@ -128,7 +135,7 @@ fn jump(
 
     let (player, output) = query.single();
 
-    if input.pressed(KeyCode::Up) && output.grounded {
+    if input.pressed(KeyCode::ArrowUp) && output.grounded {
         commands.entity(player).insert(Jump(0.0));
     }
 }
@@ -194,7 +201,7 @@ fn apply_idle_sprite(
     mut query: Query<(
         Entity,
         &KinematicCharacterControllerOutput,
-        &mut TextureAtlasSprite,
+        &mut TextureAtlas,
     )>,
 ) {
     if query.is_empty() {
@@ -213,7 +220,7 @@ fn apply_jump_sprite(
     mut query: Query<(
         Entity,
         &KinematicCharacterControllerOutput,
-        &mut TextureAtlasSprite,
+        &mut TextureAtlas,
     )>,
 ) {
     if query.is_empty() {
@@ -244,7 +251,7 @@ fn update_direction(
     }
 }
 
-fn update_sprite_direction(mut query: Query<(&mut TextureAtlasSprite, &Direction)>) {
+fn update_sprite_direction(mut query: Query<(&mut Sprite, &Direction)>) {
     if query.is_empty() {
         return;
     }

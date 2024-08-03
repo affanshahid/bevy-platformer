@@ -3,7 +3,7 @@ use bevy_rapier2d::prelude::*;
 
 use crate::WINDOW_BOTTOM_Y;
 
-const COLOR_PLATFORM: Color = Color::rgb(0.29, 0.31, 0.41);
+const COLOR_PLATFORM: Color = Color::srgb(0.29, 0.31, 0.41);
 
 #[derive(Bundle)]
 struct PlatformBundle {
@@ -37,7 +37,7 @@ pub struct PlatformsPlugin;
 
 impl Plugin for PlatformsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup);
+        app.add_systems(Startup, setup);
     }
 }
 
